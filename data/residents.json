@@ -1,0 +1,50 @@
+[
+  {
+    "apartment": "101",
+    "building": "A",
+    "resident_name": "Carlos Mendes",
+    "authorized_visitors": ["Ana Mendes", "Roberto Mendes"],
+    "vehicles": ["ABC-1234", "DEF-5678"],
+    "phone": "(11) 9****-1234"
+  },
+  {
+    "apartment": "202",
+    "building": "A",
+    "resident_name": "Fernanda Lima",
+    "authorized_visitors": [],
+    "vehicles": ["GHI-9012"],
+    "phone": "(11) 9****-5678"
+  },
+  {
+    "apartment": "305",
+    "building": "A",
+    "resident_name": "Márcia Oliveira",
+    "authorized_visitors": ["Paulo Oliveira"],
+    "vehicles": [],
+    "phone": "(11) 9****-9012"
+  },
+  {
+    "apartment": "402",
+    "building": "A",
+    "resident_name": "Bruno Souza",
+    "authorized_visitors": [],
+    "vehicles": ["JKL-3456"],
+    "phone": "(11) 9****-3456"
+  },
+  {
+    "apartment": "501",
+    "building": "B",
+    "resident_name": "Tatiane Costa",
+    "authorized_visitors": ["Jorge Costa", "Lúcia Costa"],
+    "vehicles": ["MNO-7890"],
+    "phone": "(11) 9****-7890"
+  },
+  {
+    "apartment": "103",
+    "building": "B",
+    "resident_name": "Ricardo Alves",
+    "authorized_visitors": [],
+    "vehicles": ["PQR-1234"],
+    "phone": "(11) 9****-2345"
+  }
+]
