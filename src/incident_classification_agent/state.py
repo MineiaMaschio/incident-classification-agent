@@ -26,6 +26,10 @@ class AgentState(TypedDict):
         resident_info: Informações do morador consultado via tool.
         multiple_incidents_detected: True se o relato contém mais de um
             incidente distinto, sinalizando rejeição do input.
+        session_history: Histórico acumulado de ocorrências processadas na
+            sessão corrente. Cada entrada representa uma ocorrência já
+            classificada com sucesso, contendo os campos relevantes para
+            consulta de reincidência e contexto entre interações.
     """
 
     user_input: str
@@ -44,3 +48,4 @@ class AgentState(TypedDict):
     classification_error: str | None
     resident_info: dict | None
     multiple_incidents_detected: bool | None
+    session_history: list[dict]

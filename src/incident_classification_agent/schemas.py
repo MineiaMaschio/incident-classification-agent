@@ -86,4 +86,5 @@ class IncidentInput(BaseModel):
             "classification_error": None,
             "resident_info": None,
             "multiple_incidents_detected": None,
+            "session_history": [],
         }

@@ -20,7 +20,11 @@ def _load_residents() -> list[dict]:
     if not _DATA_PATH.exists():
         logger.warning("residents.json not found at %s", _DATA_PATH)
         return []
-    return json.loads(_DATA_PATH.read_text(encoding="utf-8"))
+    try:
+        return json.loads(_DATA_PATH.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError) as exc:
+        logger.warning("Failed to load residents.json: %s", exc)
+        return []
 
 
 @tool
