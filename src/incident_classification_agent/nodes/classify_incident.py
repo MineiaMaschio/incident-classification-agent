@@ -10,11 +10,12 @@ from langgraph.prebuilt import ToolNode
 from incident_classification_agent.enums import Category, Severity
 from incident_classification_agent.llm import get_llm
 from incident_classification_agent.state import AgentState
+from incident_classification_agent.tools.get_session_history import get_session_history
 from incident_classification_agent.tools.lookup_resident import lookup_resident
 
 logger = logging.getLogger(__name__)
 
-TOOLS = [lookup_resident]
+TOOLS = [lookup_resident, get_session_history]
 tool_node = ToolNode(TOOLS)
 
 
@@ -143,6 +144,17 @@ def classify_incident(state: AgentState) -> AgentState:
 
         category = Category(raw_category)
         severity = Severity(raw_severity)
+
+        # Loga o raciocínio de severidade quando disponível
+        reasoning = data.get("reasoning")
+        if reasoning:
+            logger.info(
+                "Severity reasoning — base: %s | recurrence: %s (%s) | final: %s",
+                reasoning.get("base_severity"),
+                reasoning.get("recurrence_detected"),
+                reasoning.get("recurrence_count"),
+                reasoning.get("final_severity"),
+            )
 
     except (ValueError, KeyError) as exc:
         classification_error = str(exc)

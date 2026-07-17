@@ -55,6 +55,9 @@ def _load_input(path: str) -> IncidentInput:
 def main() -> None:
     """Inicializa o grafo e processa o incidente a partir de um arquivo JSON.
 
+    O thread_id é derivado do campo reported_by, garantindo que o histórico
+    de estado do checkpointer seja isolado por quem reporta os incidentes.
+
     Uso:
         python -m incident_classification_agent.main <caminho/para/input.json>
 
@@ -75,10 +78,19 @@ def main() -> None:
     initial_state = incident_input.to_initial_state()
     graph = build_graph()
 
-    print("\n⏳ Processando...\n")
-    logger.info("Starting incident classification agent...")
+    # thread_id idealmente seria derivado do apartamento para que o histórico
+    # de estado do checkpointer reflita reincidências por unidade habitacional.
+    # Como o apartamento só é conhecido após a classificação (processamento do
+    # LLM), usamos reported_by como identificador de sessão — limitação conhecida:
+    # porteiros diferentes reportando o mesmo apartamento ficam em threads distintas.
+    # O session.json é a fonte de verdade para reincidência, independente do thread_id.
+    thread_id = incident_input.reported_by.strip().lower().replace(" ", "_")
+    config = {"configurable": {"thread_id": thread_id}}
 
-    final_state = graph.invoke(initial_state)
+    print("\n⏳ Processando...\n")
+    logger.info("Starting incident classification agent — thread_id: %s", thread_id)
+
+    final_state = graph.invoke(initial_state, config=config)
 
     logger.info("Agent finished — output_file: %s", final_state.get("output_file"))
 

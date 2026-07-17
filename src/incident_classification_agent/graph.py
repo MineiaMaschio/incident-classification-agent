@@ -2,6 +2,7 @@
 
 import logging
 
+from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, START, StateGraph
 
 from incident_classification_agent.nodes.classify_incident import (
@@ -23,6 +24,15 @@ logger = logging.getLogger(__name__)
 
 def build_graph() -> StateGraph:
     """Constrói e compila o grafo de processamento de incidentes.
+
+    Utiliza MemorySaver como checkpointer para preservar o estado completo
+    do agente entre execuções do mesmo thread_id. Isso permite que variáveis
+    de estado — incluindo session_history — sejam mantidas em memória durante
+    toda a vida do processo, sem depender apenas do session.json em disco.
+
+    Nota: MemorySaver é volátil — o estado é perdido quando o processo encerra.
+    Para persistência entre processos distintos, o session.json (atualizado
+    pelo nó save_occurrence) serve como fonte de verdade durável.
 
     Fluxo principal:
         START → validate_input → prepare_context → classify_incident
@@ -72,6 +82,9 @@ def build_graph() -> StateGraph:
     graph.add_edge("save_occurrence", "generate_response")
     graph.add_edge("generate_response", END)
 
-    logger.info("Graph compiled successfully.")
+    checkpointer = MemorySaver()
+    compiled = graph.compile(checkpointer=checkpointer)
 
-    return graph.compile()
+    logger.info("Graph compiled successfully with MemorySaver checkpointer.")
+
+    return compiled

@@ -6,6 +6,7 @@ import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
+from incident_classification_agent.session import append_to_session
 from incident_classification_agent.state import AgentState
 
 logger = logging.getLogger(__name__)
@@ -23,6 +24,10 @@ def save_occurrence(state: AgentState) -> AgentState:
     campos de contexto imutáveis (occurrence_id, user_input, reported_by,
     reported_at, resident_info) e grava o arquivo JSON final.
 
+    Além do arquivo individual, atualiza o ``session.json`` acumulativo com
+    uma entrada resumida da ocorrência, usada pela tool ``get_session_history``
+    para consulta de reincidência em interações futuras.
+
     Incidentes com severidade HIGH são adicionalmente copiados para
     reports/escalated/ com flag de escalonamento.
 
@@ -30,7 +35,8 @@ def save_occurrence(state: AgentState) -> AgentState:
         state: Estado atual do agente com todos os campos preenchidos.
 
     Returns:
-        Estado atualizado com ``output_file`` e, se aplicável, ``escalated_file``.
+        Estado atualizado com ``output_file``, ``escalated_file`` e
+        ``session_history`` refletindo o acumulado da sessão corrente.
     """
     REPORTS_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -60,7 +66,28 @@ def save_occurrence(state: AgentState) -> AgentState:
     output_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
     logger.info("Occurrence saved to %s", output_path)
 
-    result: dict = {"output_file": str(output_path), "escalated_file": None}
+    # Entrada resumida para o histórico de sessão — usada por get_session_history
+    session_entry = {
+        "occurrence_id": occurrence_id,
+        "reported_at": state.get("reported_at"),
+        "reported_by": state.get("reported_by"),
+        "category": category.value if category is not None else None,
+        "severity": severity.value if severity is not None else None,
+        "summary": state.get("summary"),
+        "apartment": state.get("apartment"),
+        "building": state.get("building"),
+    }
+    append_to_session(session_entry)
+
+    # Atualiza o session_history em memória no estado do agente
+    session_history = list(state.get("session_history") or [])
+    session_history.append(session_entry)
+
+    result: dict = {
+        "output_file": str(output_path),
+        "escalated_file": None,
+        "session_history": session_history,
+    }
 
     severity_value = severity.value if severity is not None else None
     if severity_value == "HIGH":
@@ -77,4 +104,4 @@ def save_occurrence(state: AgentState) -> AgentState:
         logger.warning("HIGH severity — occurrence escalated to %s", escalated_path)
         result["escalated_file"] = str(escalated_path)
 
-    return {**state, "output_file": result["output_file"], "escalated_file": result["escalated_file"]}
+    return {**state, **result}
