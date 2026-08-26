@@ -1,30 +1,17 @@
-"""Tool responsável por consultar dados de moradores cadastrados."""
+"""Tool responsável por consultar dados de moradores via API HTTP."""
 
-import json
 import logging
-from pathlib import Path
+import os
 
+import httpx
+from dotenv import load_dotenv
 from langchain_core.tools import tool
+
+load_dotenv()
 
 logger = logging.getLogger(__name__)
 
-_DATA_PATH = Path(__file__).parent.parent.parent.parent / "data" / "residents.json"
-
-
-def _load_residents() -> list[dict]:
-    """Carrega a lista de moradores do arquivo local.
-
-    Returns:
-        Lista de dicionários com os dados dos moradores.
-    """
-    if not _DATA_PATH.exists():
-        logger.warning("residents.json not found at %s", _DATA_PATH)
-        return []
-    try:
-        return json.loads(_DATA_PATH.read_text(encoding="utf-8"))
-    except (json.JSONDecodeError, OSError) as exc:
-        logger.warning("Failed to load residents.json: %s", exc)
-        return []
+_RESIDENTS_API_URL = os.getenv("RESIDENTS_API_URL", "http://localhost:8000")
 
 
 @tool
@@ -49,25 +36,51 @@ def lookup_resident(apartment: str, building: str | None = None) -> dict:
         - ``vehicles``: lista de placas de veículos cadastrados
         - ``phone``: telefone de contato (mascarado)
     """
-    residents = _load_residents()
+    params: dict[str, str] = {"apartment": apartment}
+    if building is not None:
+        params["building"] = building
 
-    for resident in residents:
-        apt_match = resident.get("apartment", "").strip().lower() == apartment.strip().lower()
-        building_match = (
-            building is None
-            or resident.get("building", "").strip().lower() == building.strip().lower()
+    url = f"{_RESIDENTS_API_URL}/residents"
+    logger.info("Consultando API de moradores: %s params=%s", url, params)
+
+    try:
+        with httpx.Client(timeout=5.0) as client:
+            response = client.get(url, params=params)
+            response.raise_for_status()
+            data: dict = response.json()
+
+    except httpx.ConnectError as exc:
+        logger.info("API indisponível (ConnectError): %s", exc)
+        return {"found": False, "error": "API indisponível"}
+
+    except httpx.TimeoutException as exc:
+        logger.info("Timeout ao consultar API de moradores: %s", exc)
+        return {"found": False, "error": "API indisponível"}
+
+    except Exception as exc:  # noqa: BLE001
+        logger.info("Erro inesperado ao consultar API de moradores: %s", exc)
+        return {"found": False, "error": "API indisponível"}
+
+    if data.get("found"):
+        logger.info(
+            "Morador encontrado: apartamento=%s bloco=%s → %s",
+            apartment,
+            building,
+            data.get("resident_name"),
         )
-        if apt_match and building_match:
-            logger.info("Resident found for apartment %s / building %s", apartment, building)
-            return {
-                "found": True,
-                "apartment": resident.get("apartment"),
-                "building": resident.get("building"),
-                "resident_name": resident.get("resident_name"),
-                "authorized_visitors": resident.get("authorized_visitors", []),
-                "vehicles": resident.get("vehicles", []),
-                "phone": resident.get("phone"),
-            }
+        return {
+            "found": True,
+            "apartment": data.get("apartment"),
+            "building": data.get("building"),
+            "resident_name": data.get("resident_name"),
+            "authorized_visitors": data.get("authorized_visitors", []),
+            "vehicles": data.get("vehicles", []),
+            "phone": data.get("phone"),
+        }
 
-    logger.info("No resident found for apartment %s / building %s", apartment, building)
+    logger.info(
+        "Morador não encontrado: apartamento=%s bloco=%s",
+        apartment,
+        building,
+    )
     return {"found": False, "apartment": apartment, "building": building}

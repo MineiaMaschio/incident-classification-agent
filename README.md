@@ -219,7 +219,17 @@ OLLAMA_MODEL=qwen2.5:7b
 ollama pull qwen2.5:7b
 ```
 
-### 5. Execute o agente
+### 5. Inicie o servidor de moradores (FastAPI)
+
+A tool `lookup_resident` consulta os dados dos moradores via HTTP. O servidor deve estar em execução antes de iniciar o agente.
+
+```bash
+uv run uvicorn api.main:app --reload
+```
+
+O servidor sobe em `http://localhost:8000` por padrão. Para usar outra porta ou host, ajuste a variável `RESIDENTS_API_URL` no `.env`.
+
+### 6. Execute o agente
 
 ```bash
 uv run python -m incident_classification_agent.main examples/input.json
