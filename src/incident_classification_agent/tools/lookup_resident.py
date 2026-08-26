@@ -6,12 +6,29 @@ import os
 import httpx
 from dotenv import load_dotenv
 from langchain_core.tools import tool
+from pydantic import BaseModel, ValidationError
 
 load_dotenv()
 
 logger = logging.getLogger(__name__)
 
 _RESIDENTS_API_URL = os.getenv("RESIDENTS_API_URL", "http://localhost:8000")
+
+
+class _ResidentResponse(BaseModel):
+    """Schema de validação da resposta da API de moradores.
+
+    Garante que mudanças no contrato do servidor sejam detectadas na
+    deserialização, não em KeyError silencioso em tempo de execução.
+    """
+
+    found: bool
+    apartment: str | None = None
+    building: str | None = None
+    resident_name: str | None = None
+    authorized_visitors: list[str] = []
+    vehicles: list[str] = []
+    phone: str | None = None
 
 
 @tool
@@ -47,35 +64,47 @@ def lookup_resident(apartment: str, building: str | None = None) -> dict:
         with httpx.Client(timeout=5.0) as client:
             response = client.get(url, params=params)
             response.raise_for_status()
-            data: dict = response.json()
+            data = _ResidentResponse.model_validate(response.json())
 
     except httpx.ConnectError as exc:
-        logger.info("API indisponível (ConnectError): %s", exc)
+        logger.warning("API indisponível (ConnectError): %s", exc)
         return {"found": False, "error": "API indisponível"}
 
     except httpx.TimeoutException as exc:
-        logger.info("Timeout ao consultar API de moradores: %s", exc)
+        logger.warning("Timeout ao consultar API de moradores: %s", exc)
+        return {"found": False, "error": "API indisponível"}
+
+    except httpx.HTTPStatusError as exc:
+        logger.error(
+            "Erro HTTP ao consultar API de moradores: status=%s url=%s",
+            exc.response.status_code,
+            exc.request.url,
+        )
+        return {"found": False, "error": "API indisponível"}
+
+    except ValidationError as exc:
+        logger.error("Resposta da API fora do contrato esperado: %s", exc)
         return {"found": False, "error": "API indisponível"}
 
     except Exception as exc:  # noqa: BLE001
-        logger.info("Erro inesperado ao consultar API de moradores: %s", exc)
+        logger.error("Erro inesperado ao consultar API de moradores: %s", exc)
         return {"found": False, "error": "API indisponível"}
 
-    if data.get("found"):
+    if data.found:
         logger.info(
             "Morador encontrado: apartamento=%s bloco=%s → %s",
             apartment,
             building,
-            data.get("resident_name"),
+            data.resident_name,
         )
         return {
             "found": True,
-            "apartment": data.get("apartment"),
-            "building": data.get("building"),
-            "resident_name": data.get("resident_name"),
-            "authorized_visitors": data.get("authorized_visitors", []),
-            "vehicles": data.get("vehicles", []),
-            "phone": data.get("phone"),
+            "apartment": data.apartment,
+            "building": data.building,
+            "resident_name": data.resident_name,
+            "authorized_visitors": data.authorized_visitors,
+            "vehicles": data.vehicles,
+            "phone": data.phone,
         }
 
     logger.info(

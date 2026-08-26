@@ -37,7 +37,7 @@ def _load_residents() -> list[dict]:
         logger.error("residents.json not found at %s", _DATA_PATH)
         raise HTTPException(
             status_code=500,
-            detail=f"Arquivo de dados não encontrado: {_DATA_PATH}",
+            detail="Erro interno ao carregar dados.",
         )
     try:
         return json.loads(_DATA_PATH.read_text(encoding="utf-8"))
@@ -45,7 +45,7 @@ def _load_residents() -> list[dict]:
         logger.error("Failed to load residents.json: %s", exc)
         raise HTTPException(
             status_code=500,
-            detail=f"Falha ao ler o arquivo de dados: {exc}",
+            detail="Erro interno ao carregar dados.",
         ) from exc
 
 

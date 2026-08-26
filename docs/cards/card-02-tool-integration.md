@@ -33,8 +33,8 @@ Evoluir a tool `lookup_resident` para consumir uma API HTTP local em vez de ler 
 
 ### Code review com IA
 
-* [ ] Realizar code review da implementação do servidor FastAPI e da tool evoluída com apoio de IA
-* [ ] Registrar achados (problemas identificados, melhorias aplicadas ou descartadas) em `docs/qa/review-card02.md`
+* [x] Realizar code review da implementação do servidor FastAPI e da tool evoluída com apoio de IA
+* [x] Registrar achados (problemas identificados, melhorias aplicadas ou descartadas) em `docs/qa/review-card02.md`
 
 ---
 
@@ -44,7 +44,7 @@ Evoluir a tool `lookup_resident` para consumir uma API HTTP local em vez de ler 
 * [x] Tool `lookup_resident` consumindo a API com tratamento de erro de conexão e timeout
 * [x] Agente continua funcionando corretamente com a nova integração
 * [x] Integração documentada
-* [ ] Review registrado em `docs/qa/review-card02.md`
+* [x] Review registrado em `docs/qa/review-card02.md`
 
 ---
 
@@ -79,7 +79,7 @@ Evoluir a tool `lookup_resident` para consumir uma API HTTP local em vez de ler 
 | `.env.example` | Modificado — adicionado `RESIDENTS_API_URL=http://localhost:8000` |
 | `README.md` | Modificado — passo 5 inserido com instrução de iniciar o servidor FastAPI |
 | `docs/evidences/api-integration.md` | Criado — endpoint documentado com exemplos e evidência de execução real |
-| `docs/qa/review-card02.md` | Pendente |
+| `docs/qa/review-card02.md` | Criado — achados documentados, aplicações e descartes justificados |
 
 ### Evidências de execução
 
@@ -95,4 +95,8 @@ Resultado: `category=ACCESS`, `severity=LOW`, arquivo salvo em `reports/20260826
 
 ### Achados do code review com IA
 
-> *Pendente — a ser preenchido após execução do review em `docs/qa/review-card02.md`.*
+Dois achados levantados pelo agente `senai-pr-reviewer` (Gemini 3.6 Flash) no PR #21.
+
+**Achado 1 — Testes do endpoint:** descartado neste card. O Card 06 tem item explícito para cobrir testes da tool e do endpoint da API.
+
+**Achado 2 — Validação tipada da resposta HTTP:** aplicado. Criado modelo Pydantic `_ResidentResponse` na tool para validar a resposta antes de consumi-la. Detalhes em `docs/qa/review-card02.md`.
