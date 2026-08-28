@@ -56,6 +56,7 @@ O agente é construído como um grafo de estados com LangGraph, onde cada nó re
 |---|---|
 | `validate_input` | Valida campos obrigatórios, gera `occurrence_id` e detecta múltiplos incidentes via LLM |
 | `prepare_context` | Carrega o template do prompt, injeta o histórico de sessão e monta o `conversation_history` |
+| `prefetch_resident` | Consulta a API de moradores em paralelo com `prepare_context`, pré-carregando `resident_info` no estado antes do loop agentic |
 | `classify_incident` | Invoca o LLM com tools disponíveis em loop agentic, extrai e valida o JSON de classificação |
 | `handle_error` | Registra a falha de classificação e prepara o estado para a resposta de erro |
 | `save_occurrence` | Persiste o arquivo JSON da ocorrência em disco e atualiza o `session.json` |
@@ -68,9 +69,11 @@ graph TD
     A([START]) --> B[validate_input]
 
     B -->|multiple_incidents_detected = false| C[prepare_context]
+    B -->|multiple_incidents_detected = false| P[prefetch_resident]
     B -->|multiple_incidents_detected = true| F[generate_response]
 
     C --> D[classify_incident]
+    P --> D[classify_incident]
 
     D -->|classification_error = None| E[save_occurrence]
     D -->|classification_error preenchido| G[handle_error]
@@ -81,11 +84,13 @@ graph TD
     F --> H([END])
 ```
 
+> `prepare_context` e `prefetch_resident` executam em paralelo no mesmo super-step do LangGraph. O fan-in ocorre em `classify_incident`, que só é executado após ambos concluírem.
+
 ### Fluxos de Execução
 
 **Fluxo principal (incidente único classificado com sucesso):**
 ```
-START → validate_input → prepare_context → classify_incident → save_occurrence → generate_response → END
+START → validate_input → [prepare_context ∥ prefetch_resident] → classify_incident → save_occurrence → generate_response → END
 ```
 
 **Fluxo de rejeição (múltiplos incidentes detectados):**
@@ -95,7 +100,7 @@ START → validate_input → generate_response → END
 
 **Fluxo de erro de classificação:**
 ```
-START → validate_input → prepare_context → classify_incident → handle_error → generate_response → END
+START → validate_input → [prepare_context ∥ prefetch_resident] → classify_incident → handle_error → generate_response → END
 ```
 
 ### Decisões Condicionais
@@ -106,6 +111,8 @@ START → validate_input → prepare_context → classify_incident → handle_er
 ### Loop Agentic em `classify_incident`
 
 O nó `classify_incident` implementa um loop agentic com limite de 5 iterações. Em cada iteração, o LLM pode emitir tool calls. Quando isso ocorre, o `ToolNode` executa as ferramentas e retorna os resultados ao LLM para que ele incorpore as informações antes de produzir a classificação final em JSON.
+
+Quando `prefetch_resident` já tiver populado `resident_info` no estado, `classify_incident` injeta os dados como mensagens sintéticas no histórico antes do primeiro invoke — o LLM recebe o resultado da tool sem precisar chamá-la novamente, reduzindo a latência do loop.
 
 ---
 
@@ -149,6 +156,7 @@ incident-classification-agent/
 │       ├── nodes/
 │       │   ├── validate_input.py
 │       │   ├── prepare_context.py
+│       │   ├── prefetch_resident.py
 │       │   ├── classify_incident.py
 │       │   ├── save_occurrence.py
 │       │   ├── generate_response.py
