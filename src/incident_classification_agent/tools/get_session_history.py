@@ -44,7 +44,7 @@ def get_session_history(apartment: str | None = None, building: str | None = Non
             "total": 0,
             "message": "Nenhum apartamento informado para consulta de histórico.",
         }
-    
+
     records = load_session()
 
     matches = []
