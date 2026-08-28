@@ -32,8 +32,8 @@ Implementar detecção e bloqueio de entradas adversariais no agente e documenta
 
 ### Code review com IA
 
-* [ ] Realizar code review das alterações de segurança com apoio de IA
-* [ ] Registrar achados em `docs/qa/review-card04.md`
+* [x] Realizar code review das alterações de segurança com apoio de IA
+* [x] Registrar achados em `docs/qa/review-card04.md`
 
 ---
 
@@ -42,7 +42,7 @@ Implementar detecção e bloqueio de entradas adversariais no agente e documenta
 * [x] Entradas adversariais são bloqueadas antes de atingir o LLM
 * [x] Dados sensíveis não aparecem na saída ao usuário
 * [x] Cenário de prompt injection documentado com evidência
-* [ ] Review registrado em `docs/qa/review-card04.md` (a preencher manualmente pelo avaliador)
+* [x] Review registrado em `docs/qa/review-card04.md`
 
 ---
 
@@ -109,4 +109,17 @@ Resultado: Mensagem genérica exibida, `output_file=None`, nenhum arquivo salvo.
 
 ### Achados do code review com IA
 
-> _A preencher pelo avaliador._
+**Decisão:** ✅ APROVADO (sem ressalvas)  
+**Ferramenta:** senai-pr-reviewer (LangGraph + Gemini 3.6 Flash)  
+**Data:** 2026-08-27
+
+**Resumo:** Nenhum problema foi encontrado. A implementação de detecção determinística de prompt injection via regex é robusta, evita custos desnecessários de LLM, trata respostas de forma genérica consistente e documenta adequadamente os limites de autonomia.
+
+**Pontos positivos:**
+- Detecção regex é determinística e não depende do LLM
+- Limites de autonomia documentados de forma clara
+- Tratamento de resposta genérica consistente com o padrão do grafo
+- Evidência real com logs e output do agente
+- Proteção de dados auditada e comentada
+
+Ver detalhes completos em `docs/qa/review-card04.md`.
