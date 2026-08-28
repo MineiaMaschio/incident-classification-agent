@@ -138,19 +138,28 @@ def generate_response(state: AgentState) -> AgentState:
     Returns:
         Estado atualizado com a resposta final no ``conversation_history``.
     """
+    occurrence_id = state.get("occurrence_id", "unknown")
+    prefix = f"[occurrence_id={occurrence_id}]"
+
+    logger.info(f"{prefix} Iniciando generate_response...")
+
     if state.get("injection_detected"):
+        logger.warning(f"{prefix} Injection detected — formatting rejection response.")
         response = _format_injection_detected(state)
     elif state.get("multiple_incidents_detected"):
+        logger.warning(f"{prefix} Multiple incidents detected — formatting rejection response.")
         response = _format_multiple_incidents(state)
     elif state.get("classification_error"):
+        logger.warning(f"{prefix} Classification error — formatting error response.")
         response = _format_error(state)
     else:
+        logger.info(f"{prefix} Classification successful — formatting success response.")
         response = _format_success(state)
 
     history = list(state.get("conversation_history") or [])
     history.append(response)
 
-    logger.info("Response generated for occurrence_id: %s", state.get("occurrence_id"))
+    logger.info(f"{prefix} Response generated e adicionada ao histórico.")
 
     print(response)
 

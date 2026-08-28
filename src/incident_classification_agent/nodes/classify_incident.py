@@ -83,6 +83,13 @@ def classify_incident(state: AgentState) -> AgentState:
     Returns:
         Estado atualizado com os campos de classificação preenchidos.
     """
+    occurrence_id = state.get("occurrence_id", "unknown")
+    prefix = f"[occurrence_id={occurrence_id}]"
+
+    logger.info(f"{prefix} Iniciando classify_incident...")
+
+    import time
+
     history = state.get("conversation_history") or []
     prompt_text = history[-1] if history else state["user_input"]
 
@@ -127,13 +134,14 @@ def classify_incident(state: AgentState) -> AgentState:
             name="lookup_resident",
         )
         messages.extend([synthetic_ai, synthetic_tool_msg])
-        logger.info(
-            "classify_incident — resident_info pré-carregado injetado no contexto "
-            "(apto %s bloco %s → %s); tool call evitada.",
-            prefetched_resident.get("apartment"),
-            prefetched_resident.get("building"),
-            prefetched_resident.get("resident_name"),
+        logger.debug(
+            f"{prefix} resident_info pré-carregado injetado no contexto "
+            f"(apto {prefetched_resident.get('apartment')} bloco {prefetched_resident.get('building')} → {prefetched_resident.get('resident_name')}); tool call evitada.",
         )
+
+    # ANTES DO LLM — registra o tempo de início
+    state["llm_start_time"] = time.time()
+    logger.debug(f"{prefix} LLM invocation started.")
 
     # Agentic loop: continua enquanto o LLM emitir tool calls
     for _ in range(5):  # limite de segurança para evitar loop infinito
@@ -162,8 +170,14 @@ def classify_incident(state: AgentState) -> AgentState:
                 if result_found:
                     resident_info = result
 
+    # APÓS O LLM — registra o tempo de fim
+    state["llm_end_time"] = time.time()
+    logger.debug(
+        f"{prefix} LLM invocation ended — latency: {(state['llm_end_time'] - state['llm_start_time']) * 1000:.2f}ms"
+    )
+
     raw = ai_message.content
-    logger.debug("LLM final response: %s", raw)
+    logger.debug(f"{prefix} LLM final response: {raw[:200]}...")
 
     # Atualiza histórico com a resposta final do LLM
     history = list(history)
@@ -193,23 +207,16 @@ def classify_incident(state: AgentState) -> AgentState:
         reasoning = data.get("reasoning")
         if reasoning:
             logger.info(
-                "Severity reasoning — base: %s | recurrence: %s (%s) | final: %s",
-                reasoning.get("base_severity"),
-                reasoning.get("recurrence_detected"),
-                reasoning.get("recurrence_count"),
-                reasoning.get("final_severity"),
+                f"{prefix} Severity reasoning — base: {reasoning.get('base_severity')} | recurrence: {reasoning.get('recurrence_detected')} ({reasoning.get('recurrence_count')}) | final: {reasoning.get('final_severity')}",
             )
 
     except (ValueError, KeyError) as exc:
         classification_error = str(exc)
-        logger.error("Classification failed — %s", classification_error)
+        logger.error(f"{prefix} Classification failed — {classification_error}")
 
     if not classification_error:
         logger.info(
-            "Incident classified — category: %s, severity: %s, occurrence_id: %s",
-            category,
-            severity,
-            state.get("occurrence_id"),
+            f"{prefix} Incident classified — category: {category}, severity: {severity}",
         )
 
     return {

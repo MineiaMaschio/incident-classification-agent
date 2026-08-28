@@ -21,10 +21,11 @@ def handle_error(state: AgentState) -> AgentState:
     Returns:
         Estado inalterado (o erro já está registrado em ``classification_error``).
     """
+    occurrence_id = state.get("occurrence_id", "unknown")
+    prefix = f"[occurrence_id={occurrence_id}]"
+
     error = state.get("classification_error", "Erro desconhecido na classificação.")
     logger.error(
-        "Handling classification error for occurrence_id %s: %s",
-        state.get("occurrence_id"),
-        error,
+        f"{prefix} Handling classification error: {error}",
     )
     return state

@@ -38,9 +38,13 @@ def save_occurrence(state: AgentState) -> AgentState:
         Estado atualizado com ``output_file``, ``escalated_file`` e
         ``session_history`` refletindo o acumulado da sessão corrente.
     """
+    occurrence_id = state.get("occurrence_id") or str(uuid.uuid4())
+    prefix = f"[occurrence_id={occurrence_id}]"
+
+    logger.info(f"{prefix} Iniciando save_occurrence...")
+
     REPORTS_DIR.mkdir(parents=True, exist_ok=True)
 
-    occurrence_id = state.get("occurrence_id") or str(uuid.uuid4())
     category = state.get("category")
     severity = state.get("severity")
 
@@ -64,7 +68,7 @@ def save_occurrence(state: AgentState) -> AgentState:
 
     output_path = REPORTS_DIR / filename
     output_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
-    logger.info("Occurrence saved to %s", output_path)
+    logger.info(f"{prefix} Occurrence saved to {output_path}")
 
     # Entrada resumida para o histórico de sessão — usada por get_session_history
     session_entry = {
@@ -77,6 +81,7 @@ def save_occurrence(state: AgentState) -> AgentState:
         "apartment": state.get("apartment"),
         "building": state.get("building"),
     }
+    logger.debug(f"{prefix} Appending to session history...")
     append_to_session(session_entry)
 
     # Atualiza o session_history em memória no estado do agente
@@ -101,7 +106,9 @@ def save_occurrence(state: AgentState) -> AgentState:
         escalated_path.write_text(
             json.dumps(escalated_payload, ensure_ascii=False, indent=2), encoding="utf-8"
         )
-        logger.warning("HIGH severity — occurrence escalated to %s", escalated_path)
+        logger.warning(f"{prefix} HIGH severity — occurrence escalated to {escalated_path}")
         result["escalated_file"] = str(escalated_path)
+
+    logger.info(f"{prefix} save_occurrence concluído.")
 
     return {**state, **result}
