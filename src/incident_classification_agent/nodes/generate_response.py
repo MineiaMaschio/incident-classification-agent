@@ -40,6 +40,7 @@ def _format_success(state: AgentState) -> str:
         visitors = resident.get("authorized_visitors") or []
         if visitors:
             lines.append(f"   Visitantes autorizados: {', '.join(visitors)}")
+        # phone intencionalmente omitido — dado sensível, não exposto ao usuário
 
     if state.get("summary"):
         lines.append("")
@@ -77,6 +78,30 @@ def _format_error(state: AgentState) -> str:
     return "\n".join(lines)
 
 
+def _format_injection_detected(state: AgentState) -> str:
+    """Formata a mensagem de rejeição quando padrão adversarial foi detectado.
+
+    A mensagem é genérica e não expõe detalhes internos do sistema, técnicos
+    ou de implementação (nomes de nós, regex, "injection", "adversarial", etc.).
+    Orienta o usuário a reformular o relato de forma objetiva.
+
+    Args:
+        state: Estado atual com ``injection_detected`` marcado.
+
+    Returns:
+        Mensagem de rejeição genérica, sem expor detalhes internos.
+    """
+    lines = [
+        "⚠️  Não foi possível processar o relato informado.",
+        "",
+        "Por favor, descreva o incidente de forma objetiva,",
+        "incluindo o que aconteceu, onde e quem estava envolvido.",
+        "",
+        f"🆔 ID gerado: {state.get('occurrence_id', 'N/A')}",
+    ]
+    return "\n".join(lines)
+
+
 def _format_multiple_incidents(state: AgentState) -> str:
     """Formata a mensagem de rejeição por múltiplos incidentes detectados.
 
@@ -103,7 +128,9 @@ def generate_response(state: AgentState) -> AgentState:
     """Gera a resposta final e a adiciona ao histórico de conversa.
 
     Exibe uma resposta de sucesso se a classificação foi concluída, ou
-    uma resposta de erro se ``classification_error`` estiver preenchido.
+    uma resposta de erro se ``classification_error`` estiver preenchido,
+    ou uma resposta de rejeição se entrada adversarial foi detectada,
+    ou uma resposta de rejeição se múltiplos incidentes foram detectados.
 
     Args:
         state: Estado atual com todos os campos processados.
@@ -111,7 +138,9 @@ def generate_response(state: AgentState) -> AgentState:
     Returns:
         Estado atualizado com a resposta final no ``conversation_history``.
     """
-    if state.get("multiple_incidents_detected"):
+    if state.get("injection_detected"):
+        response = _format_injection_detected(state)
+    elif state.get("multiple_incidents_detected"):
         response = _format_multiple_incidents(state)
     elif state.get("classification_error"):
         response = _format_error(state)
