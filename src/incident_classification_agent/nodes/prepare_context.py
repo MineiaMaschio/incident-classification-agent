@@ -94,4 +94,4 @@ def prepare_context(state: AgentState) -> AgentState:
 
     logger.info("Context prepared for occurrence_id: %s", state.get("occurrence_id"))
 
-    return {**state, "conversation_history": history}
+    return {"conversation_history": history}
