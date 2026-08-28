@@ -51,7 +51,8 @@ def lookup_resident(apartment: str, building: str | None = None) -> dict:
         - ``resident_name``: nome do morador
         - ``authorized_visitors``: lista de visitantes pré-autorizados
         - ``vehicles``: lista de placas de veículos cadastrados
-        - ``phone``: telefone de contato (mascarado)
+        - ``phone``: telefone de contato — disponível no estado interno,
+          não exposto na resposta ao usuário (cf. generate_response)
     """
     params: dict[str, str] = {"apartment": apartment}
     if building is not None:
