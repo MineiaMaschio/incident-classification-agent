@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 
 @tool
-def get_session_history(apartment: str, building: str | None = None) -> dict:
+def get_session_history(apartment: str | None = None, building: str | None = None) -> dict:
     """Consulta o histórico de ocorrências anteriores de um apartamento.
 
     Deve ser chamada quando o relato mencionar um apartamento, para verificar
@@ -19,7 +19,7 @@ def get_session_history(apartment: str, building: str | None = None) -> dict:
     reincidências da mesma categoria elevam a severidade da ocorrência atual.
 
     Args:
-        apartment: Número do apartamento (ex: "305", "101").
+        apartment: Número do apartamento (ex: "305", "101"). Opcional.
         building: Bloco ou torre do apartamento (ex: "A", "B"). Opcional.
 
     Returns:
@@ -33,6 +33,18 @@ def get_session_history(apartment: str, building: str | None = None) -> dict:
         - ``total``: Total de ocorrências encontradas.
         - ``message``: Mensagem descritiva do resultado.
     """
+    # Se não houver apartamento informado, não há como consultar histórico
+    if not apartment:
+        logger.info("No apartment provided for session history query")
+        return {
+            "found": False,
+            "apartment": apartment,
+            "building": building,
+            "occurrences": [],
+            "total": 0,
+            "message": "Nenhum apartamento informado para consulta de histórico.",
+        }
+    
     records = load_session()
 
     matches = []
