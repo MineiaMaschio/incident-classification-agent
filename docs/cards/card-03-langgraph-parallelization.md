@@ -23,8 +23,8 @@ Implementar paralelização simples no grafo LangGraph para atender ao requisito
 
 ### Code review com IA
 
-* [ ] Realizar code review da implementação da paralelização com apoio de IA
-* [ ] Registrar achados em `docs/qa/review-card03.md`
+* [x] Realizar code review da implementação da paralelização com apoio de IA
+* [x] Registrar achados em `docs/qa/review-card03.md`
 
 ---
 
@@ -33,7 +33,7 @@ Implementar paralelização simples no grafo LangGraph para atender ao requisito
 * [x] Pelo menos um trecho do grafo executa em paralelo
 * [x] Fluxo principal e fluxos de erro continuam funcionando corretamente
 * [x] Diagrama do README atualizado
-* [ ] Review registrado em `docs/qa/review-card03.md`
+* [x] Review registrado em `docs/qa/review-card03.md`
 
 ---
 
@@ -70,6 +70,13 @@ Implementar paralelização simples no grafo LangGraph para atender ao requisito
 | `src/incident_classification_agent/graph.py` | Modificado — fan-out/fan-in implementado, comentário explicativo adicionado, `prefetch_resident` registrado como nó |
 | `src/incident_classification_agent/nodes/classify_incident.py` | Modificado — injeção de `resident_info` pré-carregado como mensagens sintéticas; import `uuid` adicionado, import `re` removido |
 | `README.md` | Modificado — diagrama Mermaid, tabela de nós, fluxos de execução e seção loop agentic atualizados |
+
+**Correções pós code review (PR #22):**
+
+| Arquivo | Correção |
+|---|---|
+| `src/incident_classification_agent/graph.py` | Bug crítico: aresta estática substituída por nó intermediário `_fan_out`, isolando o ramo paralelo do fluxo de rejeição |
+| `src/incident_classification_agent/nodes/prefetch_resident.py` | `lookup_resident.invoke()` envolvido em `try/except` para evitar propagação de erros de rede |
 
 ### Evidências de execução
 

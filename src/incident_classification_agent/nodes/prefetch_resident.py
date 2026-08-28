@@ -50,7 +50,15 @@ def prefetch_resident(state: AgentState) -> AgentState:
         building,
     )
 
-    result: dict = lookup_resident.invoke({"apartment": apartment, "building": building})
+    result: dict = {}
+    try:
+        result = lookup_resident.invoke({"apartment": apartment, "building": building})
+    except Exception as exc:
+        logger.error(
+            "prefetch_resident — erro de rede ao consultar API: %s; resident_info permanece None.",
+            exc,
+        )
+        return {}
 
     if result.get("found"):
         logger.info(

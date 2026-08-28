@@ -23,6 +23,26 @@ from incident_classification_agent.state import AgentState
 logger = logging.getLogger(__name__)
 
 
+def _fan_out(state: AgentState) -> dict:
+    """Nó intermediário de fan-out — não modifica o estado.
+
+    Serve exclusivamente como ponto de convergência após ``validate_input``
+    no caminho principal, permitindo que ``prepare_context`` e
+    ``prefetch_resident`` sejam disparados em paralelo a partir de duas
+    arestas simples. Sem esse nó intermediário, seria necessário uma aresta
+    incondicional direta de ``validate_input`` para ``prefetch_resident``,
+    o que faria o ramo paralelo executar também no fluxo de rejeição por
+    múltiplos incidentes — um bug crítico identificado em code review.
+
+    Args:
+        state: Estado atual do agente (passado sem modificação).
+
+    Returns:
+        Dicionário vazio — nenhuma chave do estado é alterada.
+    """
+    return {}
+
+
 def build_graph() -> StateGraph:
     """Constrói e compila o grafo de processamento de incidentes.
 
@@ -36,7 +56,7 @@ def build_graph() -> StateGraph:
     pelo nó save_occurrence) serve como fonte de verdade durável.
 
     Fluxo principal (com paralelização):
-        START → validate_input → [prepare_context ∥ prefetch_resident]
+        START → validate_input → fan_out → [prepare_context ∥ prefetch_resident]
                → classify_incident → (condicional) → save_occurrence
                → generate_response → END
 
@@ -52,6 +72,7 @@ def build_graph() -> StateGraph:
     graph = StateGraph(AgentState)
 
     graph.add_node("validate_input", validate_input)
+    graph.add_node("fan_out", _fan_out)
     graph.add_node("prepare_context", prepare_context)
     graph.add_node("prefetch_resident", prefetch_resident)
     graph.add_node("classify_incident", classify_incident)
@@ -61,20 +82,22 @@ def build_graph() -> StateGraph:
 
     graph.add_edge(START, "validate_input")
 
-    # _route_after_validate retorna "prepare_context" para o caminho normal
-    # ou "generate_response" quando múltiplos incidentes são detectados.
-    # O mapa abaixo mantém "generate_response" inalterado e redireciona
-    # "prepare_context" para um nó intermediário fan_out que dispara os dois
-    # ramos paralelos. Como add_conditional_edges exige um mapa 1-para-1,
-    # usamos a string "prepare_context" como chave de rota e apontamos para
-    # o próprio nó prepare_context; o segundo ramo (prefetch_resident) é
-    # conectado via add_edge separado, fazendo o LangGraph agendar ambos no
-    # mesmo super-step após validate_input.
+    # ---------------------------------------------------------------------------
+    # Roteamento condicional após validate_input
+    # ---------------------------------------------------------------------------
+    # _route_after_validate retorna "fan_out" para o caminho principal ou
+    # "generate_response" quando múltiplos incidentes são detectados.
+    # O nó intermediário fan_out garante que prefetch_resident só seja
+    # executado no caminho principal — nunca no fluxo de rejeição antecipada.
+    # (Correção do bug crítico identificado em code review: a aresta estática
+    # add_edge("validate_input", "prefetch_resident") executava o ramo paralelo
+    # também no fluxo de rejeição, causando classificações e gravações indevidas.)
+    # ---------------------------------------------------------------------------
     graph.add_conditional_edges(
         "validate_input",
         _route_after_validate,
         {
-            "prepare_context": "prepare_context",
+            "prepare_context": "fan_out",
             "generate_response": "generate_response",
         },
     )
@@ -102,10 +125,9 @@ def build_graph() -> StateGraph:
     #   completarem, fazendo o merge automático dos campos atualizados no estado.
     # ---------------------------------------------------------------------------
 
-    # Segundo ramo do fan-out: validate_input também dispara prefetch_resident
-    # em paralelo com prepare_context (ambas as arestas saem de validate_input
-    # através do conditional_edges acima + esta aresta direta abaixo).
-    graph.add_edge("validate_input", "prefetch_resident")
+    # Fan-out: fan_out dispara prepare_context e prefetch_resident em paralelo.
+    graph.add_edge("fan_out", "prepare_context")
+    graph.add_edge("fan_out", "prefetch_resident")
 
     # Fan-in: classify_incident só executa após ambos os ramos concluírem.
     graph.add_edge("prepare_context", "classify_incident")
