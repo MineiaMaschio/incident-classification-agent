@@ -8,16 +8,16 @@ Cobre cenários críticos:
 """
 
 import json
-import pytest
-from unittest.mock import patch, MagicMock
-from datetime import datetime, timezone
+from unittest.mock import MagicMock, patch
 
+import pytest
+
+from incident_classification_agent.enums import Category, Severity
 from incident_classification_agent.nodes.classify_incident import (
     _extract_json,
     _route_after_classify,
     classify_incident,
 )
-from incident_classification_agent.enums import Category, Severity
 from incident_classification_agent.state import AgentState
 
 

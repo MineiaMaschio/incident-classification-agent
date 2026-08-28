@@ -8,14 +8,14 @@ Este teste executa o grafo inteiro com mocks do LLM e valida:
 """
 
 import json
-import pytest
-from pathlib import Path
-from unittest.mock import patch, MagicMock
-from datetime import datetime, timezone
+from datetime import datetime
+from unittest.mock import MagicMock, patch
 
+import pytest
+
+from incident_classification_agent.enums import Category, Severity
 from incident_classification_agent.graph import build_graph
 from incident_classification_agent.state import AgentState
-from incident_classification_agent.enums import Category, Severity
 
 
 @pytest.fixture
@@ -103,7 +103,7 @@ class TestE2EIncidentFlow:
             assert result["occurrence_id"] is not None
             # Bug do Card 05: occurrence_id deve estar propagado
             assert isinstance(result["occurrence_id"], str)
-            
+
             # Validações de classificação
             assert result["category"] == Category.MAINTENANCE
             assert result["severity"] == Severity.MEDIUM
@@ -292,7 +292,7 @@ class TestE2EIncidentFlow:
             # Validação do BUG FIX Card 05
             initial_occurrence_id = result["occurrence_id"]
             assert initial_occurrence_id is not None
-            
+
             # Validar que occurrence_id aparece em todos os pontos do fluxo
             # (via logging/nodes_executed que usam o occurrence_id internamente)
             assert "validate_input" in result["nodes_executed"]
@@ -350,7 +350,7 @@ class TestE2EIncidentFlow:
             assert isinstance(result["llm_start_time"], float)
             assert isinstance(result["llm_end_time"], float)
             assert result["llm_end_time"] >= result["llm_start_time"]
-            
+
             # Latência deve ser calculável
             latency_ms = (result["llm_end_time"] - result["llm_start_time"]) * 1000
             assert latency_ms >= 0

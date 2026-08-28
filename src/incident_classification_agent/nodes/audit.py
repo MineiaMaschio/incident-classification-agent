@@ -3,7 +3,6 @@
 import json
 import os
 from datetime import datetime, timezone
-from pathlib import Path
 from typing import TypedDict
 
 from incident_classification_agent.state import AgentState
