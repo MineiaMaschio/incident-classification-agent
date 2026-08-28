@@ -4,6 +4,7 @@ import logging
 
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, START, StateGraph
+from typing import Annotated
 
 from incident_classification_agent.nodes.classify_incident import (
     _route_after_classify,
@@ -23,6 +24,28 @@ from incident_classification_agent.state import AgentState
 logger = logging.getLogger(__name__)
 
 
+def _track_node_execution(node_func, node_name):
+    """Cria um wrapper que rastreia a execução de um nó.
+
+    Args:
+        node_func: Função do nó a ser envolvida.
+        node_name: Nome do nó (para logging e rastreamento).
+
+    Returns:
+        Função wrapper que atualiza nodes_executed no estado.
+    """
+    def wrapper(state: AgentState) -> dict:
+        result = node_func(state)
+        
+        # Retorna o resultado do nó junto com nodes_executed atualizado
+        # O reducer _append_to_list do LangGraph irá mesclar a lista
+        if isinstance(result, dict):
+            return {**result, "nodes_executed": [node_name]}
+        return result
+    
+    return wrapper
+
+
 def _fan_out(state: AgentState) -> dict:
     """Nó intermediário de fan-out — não modifica o estado.
 
@@ -38,9 +61,14 @@ def _fan_out(state: AgentState) -> dict:
         state: Estado atual do agente (passado sem modificação).
 
     Returns:
-        Dicionário vazio — nenhuma chave do estado é alterada.
+        Dicionário com nodes_executed atualizado.
     """
-    return {}
+    occurrence_id = state.get("occurrence_id", "unknown")
+    prefix = f"[occurrence_id={occurrence_id}]"
+    
+    logger.debug(f"{prefix} Executing fan_out node.")
+    
+    return {"nodes_executed": ["fan_out"]}
 
 
 def build_graph() -> StateGraph:
@@ -71,14 +99,23 @@ def build_graph() -> StateGraph:
     """
     graph = StateGraph(AgentState)
 
-    graph.add_node("validate_input", validate_input)
+    # Envolve cada nó com rastreamento de nodes_executed
+    wrapped_validate_input = _track_node_execution(validate_input, "validate_input")
+    wrapped_prepare_context = _track_node_execution(prepare_context, "prepare_context")
+    wrapped_prefetch_resident = _track_node_execution(prefetch_resident, "prefetch_resident")
+    wrapped_classify_incident = _track_node_execution(classify_incident, "classify_incident")
+    wrapped_handle_error = _track_node_execution(handle_error, "handle_error")
+    wrapped_save_occurrence = _track_node_execution(save_occurrence, "save_occurrence")
+    wrapped_generate_response = _track_node_execution(generate_response, "generate_response")
+
+    graph.add_node("validate_input", wrapped_validate_input)
     graph.add_node("fan_out", _fan_out)
-    graph.add_node("prepare_context", prepare_context)
-    graph.add_node("prefetch_resident", prefetch_resident)
-    graph.add_node("classify_incident", classify_incident)
-    graph.add_node("handle_error", handle_error)
-    graph.add_node("save_occurrence", save_occurrence)
-    graph.add_node("generate_response", generate_response)
+    graph.add_node("prepare_context", wrapped_prepare_context)
+    graph.add_node("prefetch_resident", wrapped_prefetch_resident)
+    graph.add_node("classify_incident", wrapped_classify_incident)
+    graph.add_node("handle_error", wrapped_handle_error)
+    graph.add_node("save_occurrence", wrapped_save_occurrence)
+    graph.add_node("generate_response", wrapped_generate_response)
 
     graph.add_edge(START, "validate_input")
 

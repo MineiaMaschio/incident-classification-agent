@@ -77,12 +77,19 @@ def prepare_context(state: AgentState) -> AgentState:
     Returns:
         Estado atualizado com o histórico de conversa preenchido.
     """
+    occurrence_id = state.get("occurrence_id", "unknown")
+    prefix = f"[occurrence_id={occurrence_id}]"
+
+    logger.info(f"{prefix} Iniciando prepare_context...")
+
     template = _load_prompt_template()
 
     session_context = _build_session_context(
         state.get("apartment"),
         state.get("building"),
     )
+
+    logger.debug(f"{prefix} Session context construído.")
 
     prompt = template.replace("{user_input}", state["user_input"])
     prompt = prompt.replace("{reported_by}", state["reported_by"])
@@ -92,6 +99,6 @@ def prepare_context(state: AgentState) -> AgentState:
     history = list(state.get("conversation_history") or [])
     history.append(prompt)
 
-    logger.info("Context prepared for occurrence_id: %s", state.get("occurrence_id"))
+    logger.info(f"{prefix} Context prepared — histórico atualizado.")
 
     return {"conversation_history": history}

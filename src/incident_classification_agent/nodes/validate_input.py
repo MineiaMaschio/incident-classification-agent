@@ -123,6 +123,9 @@ def validate_input(state: AgentState) -> AgentState:
     Raises:
         ValueError: Se ``user_input`` ou ``reported_by`` estiverem vazios.
     """
+    occurrence_id = state.get("occurrence_id") or str(uuid.uuid4())
+    prefix = f"[occurrence_id={occurrence_id}]"
+
     user_input = (state.get("user_input") or "").strip()
     reported_by = (state.get("reported_by") or "").strip()
 
@@ -133,7 +136,8 @@ def validate_input(state: AgentState) -> AgentState:
         raise ValueError("O campo 'reported_by' é obrigatório.")
 
     reported_at = state.get("reported_at") or datetime.now(tz=timezone.utc).isoformat()
-    occurrence_id = state.get("occurrence_id") or str(uuid.uuid4())
+
+    logger.info(f"{prefix} Iniciando validate_input...")
 
     # Detecta prompt injection ANTES de enviar qualquer coisa ao LLM
     injection_detected = _detect_injection(user_input)
@@ -141,27 +145,24 @@ def validate_input(state: AgentState) -> AgentState:
     # Se foi detectado injection, não chama o LLM
     if injection_detected:
         logger.warning(
-            "Prompt injection detected — occurrence_id: %s",
-            occurrence_id,
+            f"{prefix} Prompt injection detected.",
         )
         multiple_incidents_detected = False
     else:
         # Caso contrário, verifica múltiplos incidentes normalmente
+        logger.debug(f"{prefix} Verificando múltiplos incidentes...")
         multiple_incidents_detected = _detect_multiple_incidents(user_input)
 
     logger.info(
-        "Input validated — occurrence_id: %s | injection: %s | multiple_incidents: %s",
-        occurrence_id,
-        injection_detected,
-        multiple_incidents_detected,
+        f"{prefix} Input validated — injection: {injection_detected} | multiple_incidents: {multiple_incidents_detected}",
     )
 
     return {
         **state,
+        "occurrence_id": occurrence_id,
         "user_input": user_input,
         "reported_by": reported_by,
         "reported_at": reported_at,
-        "occurrence_id": occurrence_id,
         "involved_people": state.get("involved_people") or [],
         "conversation_history": state.get("conversation_history") or [],
         "injection_detected": injection_detected,

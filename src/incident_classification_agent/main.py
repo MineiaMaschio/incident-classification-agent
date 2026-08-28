@@ -3,11 +3,13 @@
 import json
 import logging
 import sys
+import time
 from pathlib import Path
 
 from pydantic import ValidationError
 
 from incident_classification_agent.graph import build_graph
+from incident_classification_agent.nodes.audit import build_audit_entry, save_audit_entry
 from incident_classification_agent.schemas import IncidentInput
 
 logging.basicConfig(
@@ -58,6 +60,12 @@ def main() -> None:
     O thread_id é derivado do campo reported_by, garantindo que o histórico
     de estado do checkpointer seja isolado por quem reporta os incidentes.
 
+    Instrumentação:
+    - Captura execution_start_time no início da execução
+    - Captura execution_end_time no final
+    - Rastreia nodes_executed ao longo do grafo
+    - Constrói e persiste auditoria em reports/audit.jsonl
+
     Uso:
         python -m incident_classification_agent.main <caminho/para/input.json>
 
@@ -76,6 +84,14 @@ def main() -> None:
         sys.exit(1)
 
     initial_state = incident_input.to_initial_state()
+    
+    # Inicializa campos de timing e execução
+    initial_state["execution_start_time"] = time.time()
+    initial_state["execution_end_time"] = None
+    initial_state["llm_start_time"] = None
+    initial_state["llm_end_time"] = None
+    initial_state["nodes_executed"] = []
+
     graph = build_graph()
 
     # thread_id idealmente seria derivado do apartamento para que o histórico
@@ -92,8 +108,30 @@ def main() -> None:
 
     final_state = graph.invoke(initial_state, config=config)
 
+    # Captura o tempo final de execução
+    final_state["execution_end_time"] = time.time()
+
     logger.info("Agent finished — output_file: %s", final_state.get("output_file"))
+
+    # Constrói e persiste a entrada de auditoria
+    try:
+        audit_entry = build_audit_entry(final_state)
+        save_audit_entry(audit_entry)
+        occurrence_id = final_state.get("occurrence_id", "unknown")
+        llm_latency_str = (
+            f"{audit_entry['llm_latency_ms']:.2f}ms"
+            if audit_entry["llm_latency_ms"]
+            else "N/A"
+        )
+        logger.info(
+            f"[occurrence_id={occurrence_id}] Audit entry persisted — "
+            f"total_latency: {audit_entry['total_latency_ms']:.2f}ms, "
+            f"llm_latency: {llm_latency_str}"
+        )
+    except Exception as exc:
+        logger.error("Failed to persist audit entry: %s", exc)
 
 
 if __name__ == "__main__":
     main()
+

@@ -27,11 +27,16 @@ def prefetch_resident(state: AgentState) -> AgentState:
         Estado atualizado com ``resident_info`` preenchido quando o morador é
         encontrado, ou inalterado nos demais casos.
     """
+    occurrence_id = state.get("occurrence_id", "unknown")
+    prefix = f"[occurrence_id={occurrence_id}]"
+
+    logger.info(f"{prefix} Iniciando prefetch_resident...")
+
     # Idempotência: se já foi preenchido (ex: por execução anterior no mesmo thread),
     # não faz nova chamada à API.
     if state.get("resident_info") is not None:
         logger.info(
-            "prefetch_resident — resident_info já presente no estado, ignorando chamada à API."
+            f"{prefix} resident_info já presente no estado, ignorando chamada à API."
         )
         return {}
 
@@ -40,14 +45,12 @@ def prefetch_resident(state: AgentState) -> AgentState:
 
     if not apartment:
         logger.info(
-            "prefetch_resident — 'apartment' ausente no estado; nenhuma consulta realizada."
+            f"{prefix} 'apartment' ausente no estado; nenhuma consulta realizada."
         )
         return {}
 
-    logger.info(
-        "prefetch_resident — consultando morador: apartamento=%s bloco=%s",
-        apartment,
-        building,
+    logger.debug(
+        f"{prefix} Consultando morador: apartamento={apartment} bloco={building}"
     )
 
     result: dict = {}
@@ -55,30 +58,23 @@ def prefetch_resident(state: AgentState) -> AgentState:
         result = lookup_resident.invoke({"apartment": apartment, "building": building})
     except Exception as exc:
         logger.error(
-            "prefetch_resident — erro de rede ao consultar API: %s; resident_info permanece None.",
-            exc,
+            f"{prefix} Erro de rede ao consultar API: {exc}; resident_info permanece None.",
         )
         return {}
 
     if result.get("found"):
         logger.info(
-            "prefetch_resident — morador encontrado: %s (apto %s bloco %s)",
-            result.get("resident_name"),
-            apartment,
-            building,
+            f"{prefix} Morador encontrado: {result.get('resident_name')} (apto {apartment} bloco {building})",
         )
         return {"resident_info": result}
 
     if result.get("error"):
         logger.warning(
-            "prefetch_resident — falha ao consultar API: %s; resident_info permanece None.",
-            result.get("error"),
+            f"{prefix} Falha ao consultar API: {result.get('error')}; resident_info permanece None.",
         )
         return {}
 
     logger.info(
-        "prefetch_resident — morador não encontrado: apartamento=%s bloco=%s",
-        apartment,
-        building,
+        f"{prefix} Morador não encontrado: apartamento={apartment} bloco={building}",
     )
     return {}

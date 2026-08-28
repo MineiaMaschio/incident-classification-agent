@@ -1,8 +1,26 @@
 """Definição do estado compartilhado entre os nós do grafo."""
 
-from typing import TypedDict
+from typing import Annotated, TypedDict
 
 from incident_classification_agent.enums import Category, Severity
+
+
+def _append_to_list(left, right):
+    """Reducer para concatenar listas sem duplicatas.
+    
+    Usado para o campo nodes_executed que pode ser atualizado por múltiplos
+    nós em paralelo (prepare_context e prefetch_resident).
+    """
+    if left is None:
+        return right or []
+    if right is None:
+        return left or []
+    # Concatena e remove duplicatas mantendo ordem
+    result = list(left)
+    for item in right:
+        if item not in result:
+            result.append(item)
+    return result
 
 
 class AgentState(TypedDict):
@@ -33,6 +51,11 @@ class AgentState(TypedDict):
             sessão corrente. Cada entrada representa uma ocorrência já
             classificada com sucesso, contendo os campos relevantes para
             consulta de reincidência e contexto entre interações.
+        execution_start_time: Timestamp (time.time()) do início da execução.
+        execution_end_time: Timestamp (time.time()) do final da execução.
+        llm_start_time: Timestamp (time.time()) do início do LLM em classify_incident.
+        llm_end_time: Timestamp (time.time()) do final do LLM em classify_incident.
+        nodes_executed: Lista de nós executados durante o processamento (com reducer).
     """
 
     user_input: str
@@ -53,3 +76,8 @@ class AgentState(TypedDict):
     multiple_incidents_detected: bool | None
     injection_detected: bool | None
     session_history: list[dict]
+    execution_start_time: float | None
+    execution_end_time: float | None
+    llm_start_time: float | None
+    llm_end_time: float | None
+    nodes_executed: Annotated[list[str], _append_to_list]
