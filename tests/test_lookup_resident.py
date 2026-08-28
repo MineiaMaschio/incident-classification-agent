@@ -11,8 +11,9 @@ NOTA: Testes de HTTP são mocados no nível de httpx.post.
 Se a API real estiver rodando, os testes verificam erro handling gracioso.
 """
 
-import httpx
 from unittest.mock import MagicMock, patch
+
+import httpx
 
 from incident_classification_agent.tools.lookup_resident import lookup_resident
 
