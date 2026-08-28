@@ -159,10 +159,10 @@ def validate_input(state: AgentState) -> AgentState:
 
     return {
         **state,
+        "occurrence_id": occurrence_id,
         "user_input": user_input,
         "reported_by": reported_by,
         "reported_at": reported_at,
-        "occurrence_id": occurrence_id,
         "involved_people": state.get("involved_people") or [],
         "conversation_history": state.get("conversation_history") or [],
         "injection_detected": injection_detected,

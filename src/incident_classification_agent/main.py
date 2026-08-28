@@ -128,8 +128,8 @@ def main() -> None:
             f"total_latency: {audit_entry['total_latency_ms']:.2f}ms, "
             f"llm_latency: {llm_latency_str}"
         )
-    except ValueError as exc:
-        logger.error("Failed to build audit entry: %s", exc)
+    except Exception as exc:
+        logger.error("Failed to persist audit entry: %s", exc)
 
 
 if __name__ == "__main__":

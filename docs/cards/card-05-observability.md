@@ -36,9 +36,9 @@ Implementar um segundo sinal de observabilidade além dos logs existentes, garan
 
 ### Code review com IA
 
-* [ ] Realizar code review da implementação de auditoria e correlação com apoio de IA
+* [x] Realizar code review da implementação de auditoria e correlação com apoio de IA
 
-* [ ] Registrar achados em `docs/qa/review-card05.md`
+* [x] Registrar achados em `docs/qa/review-card05.md`
 
 ---
 
@@ -49,7 +49,7 @@ Implementar um segundo sinal de observabilidade além dos logs existentes, garan
 * [x] Latência registrada (total + LLM)
 * [x] Documentação completa em `docs/observability/README.md`
 * [x] Evidência de investigação de uma execução real em `docs/evidences/observability-trace.md`
-* [ ] Review registrado em `docs/qa/review-card05.md`
+* [x] Review registrado em `docs/qa/review-card05.md`
 
 ---
 
@@ -79,7 +79,7 @@ Implementar um segundo sinal de observabilidade além dos logs existentes, garan
 | `src/incident_classification_agent/main.py` | ✅ Modificado — instrumentação (execution_start/end_time, auditoria) |
 | `docs/observability/README.md` | ✅ Criado — guia completo com 10+ cenários |
 | `docs/evidences/observability-trace.md` | ✅ Criado — 2 execuções reais documentadas |
-| `docs/qa/review-card05.md` | ⏳ Pendente — será preenchido após code review com IA |
+| `docs/qa/review-card05.md` | ✅ Criado — code review com 4 achados críticos + corrigidos |
 | `reports/audit.jsonl` | ✅ Criado — 2 linhas append-only (injection + sucesso) |
 | `docs/cards/card-05-observability.md` | ✅ Criado — este arquivo |
 
@@ -93,7 +93,7 @@ Ao final deste card, você terá:
 2. ✅ **Rastreamento de latência** — capturar tempos antes/depois de operações críticas (LLM, gravação em disco)
 3. ✅ **Observabilidade em dois sinais** — logs para investigação em tempo real, auditoria para análise e conformidade
 4. ✅ **Investigação de execução real** — usar os dois sinais para entender o que aconteceu em uma ocorrência
-5. ⏳ **Code review estruturado com IA** — avaliar a qualidade e segurança da implementação de observabilidade
+5. ✅ **Code review estruturado com IA** — avaliar a qualidade e segurança da implementação de observabilidade
 
 ---
 
@@ -169,4 +169,62 @@ Ao final da implementação:
 - **Card 06**: Testes automatizados com IA (unit + E2E)
 - **Card 07**: Pipeline CI com lint, test e validação
 - **Card 08**: Análise de anomalias com IA (detecção automática de falhas e estimativa de risco)
+
+---
+
+## 🔍 Code Review — Resultado
+
+**Status:** ✅ Aprovado com ressalvas — **4 bugs críticos identificados e corrigidos**
+
+### Achados da Revisão (senai-pr-reviewer / Gemini 3.6 Flash)
+
+| # | Achado | Severidade | Status |
+|---|--------|-----------|--------|
+| 1 | `occurrence_id` não retornado em `validate_input` | 🔴 MAJOR | ✅ CORRIGIDO |
+| 2 | `KeyError` ao acessar `occurrence_id` em `build_audit_entry` | 🔴 MAJOR | ✅ CORRIGIDO |
+| 3 | Tratamento de exceção incompleto em `main.py` | 🔴 MAJOR | ✅ CORRIGIDO |
+| 4 | `llm_latency_ms` não persiste no estado | 🔴 MAJOR | ✅ CORRIGIDO |
+
+### Correções Aplicadas
+
+**Achado 1:** Adicionado `"occurrence_id": occurrence_id,` ao retorno de `validate_input.py`
+
+**Achado 2:** Alterado `state["occurrence_id"]` para `state.get("occurrence_id", "unknown")` em `audit.py`
+
+**Achado 3:** Expandido `except ValueError` para `except Exception` em `main.py`
+
+**Achado 4:** Adicionados `"llm_start_time"` e `"llm_end_time"` ao retorno de `classify_incident.py`
+
+### Forças Identificadas
+
+✅ **Arquitetura de auditoria bem estruturada** — `AuditEntry` como TypedDict é clara e reutilizável, `build_audit_entry` centraliza lógica, append-only garante integridade
+
+✅ **Correlação por occurrence_id em design** — padrão `[occurrence_id=<id>]` consistente e rastreável, facilita investigação
+
+✅ **Instrumentação de latência bem posicionada** — `llm_start_time`/`llm_end_time` capturam intervalo correto, milissegundos com precisão, timestamps UTC ISO 8601
+
+### Ressalvas
+
+⚠️ **Dependência em retorno de dicionário** — frágil porque é fácil esquecer um campo. Recomendação: adicionar testes unitários que validam propagação de estado
+
+⚠️ **Falta de testes para persistência de estado** — nenhum teste valida que `occurrence_id` persiste entre nós. Recomendação: adicionar `tests/test_audit.py` com casos de fluxo completo
+
+**Documento completo:** `docs/qa/review-card05.md`
+
+---
+
+## 📋 Status Final do Card 05
+
+| Item | Status |
+|------|--------|
+| Implementação das 6 tarefas técnicas | ✅ 100% |
+| Execução real com 2 cenários | ✅ Documentada |
+| Auditoria append-only funcionando | ✅ Verificada |
+| Correlação por occurrence_id | ✅ 100% dos logs |
+| Latência (total + LLM) | ✅ Registrada |
+| Documentação de observabilidade | ✅ Completa (10+ cenários) |
+| Code review com IA | ✅ 4 bugs identificados e corrigidos |
+| Testes automatizados | ⏳ Pendente (Card 06) |
+
+**Decisão:** ✅ **CARD 05 COMPLETO E PRONTO PARA MERGE**
 

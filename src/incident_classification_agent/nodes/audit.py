@@ -117,7 +117,7 @@ def build_audit_entry(state: AgentState) -> AuditEntry:
     severity_str = severity_val.value if hasattr(severity_val, "value") else severity_val
 
     return AuditEntry(
-        occurrence_id=state["occurrence_id"],
+        occurrence_id=state.get("occurrence_id", "unknown"),
         started_at=started_at,
         ended_at=ended_at,
         total_latency_ms=total_latency_ms,

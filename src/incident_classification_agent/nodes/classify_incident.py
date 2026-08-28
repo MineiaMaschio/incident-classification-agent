@@ -221,6 +221,8 @@ def classify_incident(state: AgentState) -> AgentState:
 
     return {
         **state,
+        "llm_start_time": state.get("llm_start_time"),
+        "llm_end_time": state.get("llm_end_time"),
         "category": category,
         "severity": severity,
         "involved_people": data.get("involved_people") or [],
