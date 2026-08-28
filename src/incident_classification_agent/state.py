@@ -7,7 +7,7 @@ from incident_classification_agent.enums import Category, Severity
 
 def _append_to_list(left, right):
     """Reducer para concatenar listas sem duplicatas.
-    
+
     Usado para o campo nodes_executed que pode ser atualizado por múltiplos
     nós em paralelo (prepare_context e prefetch_resident).
     """

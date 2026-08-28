@@ -11,10 +11,8 @@ NOTA: Testes de HTTP são mocados no nível de httpx.post.
 Se a API real estiver rodando, os testes verificam erro handling gracioso.
 """
 
-import pytest
-import json
-from unittest.mock import patch, MagicMock
 import httpx
+from unittest.mock import MagicMock, patch
 
 from incident_classification_agent.tools.lookup_resident import lookup_resident
 
@@ -140,7 +138,7 @@ class TestLookupResidentContract:
             ):
                 # Não deve lançar exceção
                 result = lookup_resident.invoke({"apartment": "101", "building": "A"})
-                
+
                 # Sempre retorna dict com found=False
                 assert isinstance(result, dict)
                 assert "found" in result

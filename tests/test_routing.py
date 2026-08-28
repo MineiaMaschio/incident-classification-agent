@@ -4,10 +4,9 @@ Valida que as decisões de roteamento são corretas baseadas no estado
 do agente em cada ponto de decisão do grafo.
 """
 
-import pytest
-from incident_classification_agent.nodes.validate_input import _route_after_validate
-from incident_classification_agent.nodes.classify_incident import _route_after_classify
 from incident_classification_agent.enums import Category, Severity
+from incident_classification_agent.nodes.classify_incident import _route_after_classify
+from incident_classification_agent.nodes.validate_input import _route_after_validate
 from incident_classification_agent.state import AgentState
 
 

@@ -84,7 +84,7 @@ def main() -> None:
         sys.exit(1)
 
     initial_state = incident_input.to_initial_state()
-    
+
     # Inicializa campos de timing e execução
     initial_state["execution_start_time"] = time.time()
     initial_state["execution_end_time"] = None

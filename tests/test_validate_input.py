@@ -7,14 +7,15 @@ Cobre cenários críticos:
 - Propagação de occurrence_id (bug do Card 05)
 """
 
+from datetime import datetime
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import patch, MagicMock
-from datetime import datetime, timezone
 
 from incident_classification_agent.nodes.validate_input import (
-    validate_input,
     _detect_injection,
     _route_after_validate,
+    validate_input,
 )
 from incident_classification_agent.state import AgentState
 

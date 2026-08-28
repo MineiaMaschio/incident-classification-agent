@@ -4,7 +4,6 @@ import logging
 
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, START, StateGraph
-from typing import Annotated
 
 from incident_classification_agent.nodes.classify_incident import (
     _route_after_classify,
@@ -12,8 +11,8 @@ from incident_classification_agent.nodes.classify_incident import (
 )
 from incident_classification_agent.nodes.generate_response import generate_response
 from incident_classification_agent.nodes.handle_error import handle_error
-from incident_classification_agent.nodes.prepare_context import prepare_context
 from incident_classification_agent.nodes.prefetch_resident import prefetch_resident
+from incident_classification_agent.nodes.prepare_context import prepare_context
 from incident_classification_agent.nodes.save_occurrence import save_occurrence
 from incident_classification_agent.nodes.validate_input import (
     _route_after_validate,
@@ -36,13 +35,13 @@ def _track_node_execution(node_func, node_name):
     """
     def wrapper(state: AgentState) -> dict:
         result = node_func(state)
-        
+
         # Retorna o resultado do nó junto com nodes_executed atualizado
         # O reducer _append_to_list do LangGraph irá mesclar a lista
         if isinstance(result, dict):
             return {**result, "nodes_executed": [node_name]}
         return result
-    
+
     return wrapper
 
 
@@ -65,9 +64,9 @@ def _fan_out(state: AgentState) -> dict:
     """
     occurrence_id = state.get("occurrence_id", "unknown")
     prefix = f"[occurrence_id={occurrence_id}]"
-    
+
     logger.debug(f"{prefix} Executing fan_out node.")
-    
+
     return {"nodes_executed": ["fan_out"]}
 
 
