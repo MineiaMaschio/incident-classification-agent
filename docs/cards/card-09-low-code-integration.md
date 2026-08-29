@@ -1,6 +1,6 @@
 # 🎯 Card 09: Low-Code Integration com n8n
 
-**Status**: Em Desenvolvimento  
+**Status**: ✅ COMPLETO  
 **Branch**: `feature/low-code`  
 **Data de Criação**: 2026-08-29
 
@@ -35,8 +35,8 @@ Criar uma integração low-code/no-code com n8n que receba notificação da apli
 
 ### 4️⃣ Code Review com IA
 
-- [ ] Realizar code review da alteração em `save_occurrence`
-- [ ] Registrar achados em `docs/qa/review-card09.md`
+- [x] Realizar code review da alteração em `save_occurrence` ✅ CONCLUÍDO
+- [x] Registrar achados e aplicar correções ✅ CONCLUÍDO
 
 ---
 
@@ -124,13 +124,27 @@ O webhook enviará o seguinte JSON quando `severity == HIGH`:
 
 ---
 
-## 📝 Notas Importantes
+## � Code Review (Revisão de IA)
 
-- ⚠️ **Não-bloqueante**: Falha no webhook NÃO deve parar a classificação
-- 🔐 **Segurança**: Validar URL do webhook antes de enviar
-- 🕐 **Timeout**: Configurar timeout razoável (ex: 5-10 segundos)
-- 📊 **Logging**: Log de success/failure para troubleshooting
-- 🔄 **Retry**: Considerar retry com exponential backoff no n8n
+A revisão automatizada do PR identificou 2 problemas que foram **CORRIGIDOS**:
+
+1. **Problema: `asyncio.run()` bloqueante**
+   - ❌ Antes: `asyncio.run()` bloqueia a thread e quebra em loops asyncio ativos
+   - ✅ Depois: Usar `threading.Thread` com `daemon=True` para disparar em background
+
+2. **Problema: Timeout não capturado**
+   - ❌ Antes: Capturava `asyncio.TimeoutError` (incorreto para httpx)
+   - ✅ Depois: Captura `httpx.TimeoutException` (correto para httpx)
+
+Veja `docs/qa/review-card09.md` para detalhes completos.
+
+## �� Notas Importantes
+
+- ⚠️ **Não-bloqueante**: Falha no webhook NÃO deve parar a classificação ✅
+- 🔐 **Segurança**: Validar URL do webhook antes de enviar ✅
+- 🕐 **Timeout**: Configurado com 10 segundos ✅
+- 📊 **Logging**: Log de success/failure implementado ✅
+- 🔄 **Retry**: Considerar retry com exponential backoff no n8n (fora do escopo do card)
 
 ---
 
@@ -144,8 +158,8 @@ O webhook enviará o seguinte JSON quando `severity == HIGH`:
 - [x] Documentação completa
 - [x] Screenshots anexados
 - [x] Export do n8n salvo
-- [ ] Code review concluído
-- [ ] PR pronto para review
+- [x] Code review concluído ✅ Correções aplicadas
+- [x] PR pronto para review ✅ COMPLETO
 
 ---
 

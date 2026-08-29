@@ -58,7 +58,7 @@ async def _send_webhook_async(webhook_url: str, payload: dict, occurrence_id: st
                 )
                 return False
 
-    except asyncio.TimeoutError:
+    except httpx.TimeoutException:
         logger.warning(f"{prefix} Webhook timeout after 10s")
         return False
     except httpx.RequestError as exc:
