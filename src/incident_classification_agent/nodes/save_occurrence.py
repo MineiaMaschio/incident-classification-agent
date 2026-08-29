@@ -7,7 +7,6 @@ import os
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Optional
 
 import httpx
 
@@ -23,21 +22,21 @@ ESCALATED_DIR = REPORTS_DIR / "escalated"
 
 async def _send_webhook_async(webhook_url: str, payload: dict, occurrence_id: str) -> bool:
     """Envia payload via webhook para o n8n de forma não-bloqueante.
-    
+
     Args:
         webhook_url: URL do webhook (ex: http://localhost:5678/webhook/incidents)
         payload: Dicionário com os dados da ocorrência
         occurrence_id: ID da ocorrência para logging
-    
+
     Returns:
         True se sucesso, False se falha (não lança exceção)
     """
     prefix = f"[occurrence_id={occurrence_id}]"
-    
+
     if not webhook_url or not webhook_url.strip():
         logger.debug(f"{prefix} WEBHOOK_URL not configured, skipping webhook call")
         return False
-    
+
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:
             response = await client.post(
@@ -45,7 +44,7 @@ async def _send_webhook_async(webhook_url: str, payload: dict, occurrence_id: st
                 json=payload,
                 headers={"Content-Type": "application/json"},
             )
-            
+
             if response.status_code in (200, 201, 202, 204):
                 logger.info(
                     f"{prefix} Webhook sent successfully "
@@ -58,7 +57,7 @@ async def _send_webhook_async(webhook_url: str, payload: dict, occurrence_id: st
                     f"[response={response.text[:200]}]"
                 )
                 return False
-                
+
     except asyncio.TimeoutError:
         logger.warning(f"{prefix} Webhook timeout after 10s")
         return False
@@ -72,7 +71,7 @@ async def _send_webhook_async(webhook_url: str, payload: dict, occurrence_id: st
 
 def _dispatch_webhook(webhook_url: str, payload: dict, occurrence_id: str) -> None:
     """Dispara o webhook de forma não-bloqueante usando asyncio.
-    
+
     Args:
         webhook_url: URL do webhook
         payload: Dicionário com os dados
@@ -176,7 +175,7 @@ def save_occurrence(state: AgentState) -> AgentState:
         )
         logger.warning(f"{prefix} HIGH severity — occurrence escalated to {escalated_path}")
         result["escalated_file"] = str(escalated_path)
-        
+
         # Dispara webhook para n8n de forma não-bloqueante
         webhook_url = os.getenv("WEBHOOK_URL", "").strip()
         if webhook_url:

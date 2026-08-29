@@ -41,11 +41,11 @@ def _build_session_context(apartment: str | None, building: str | None) -> str:
         return "Nenhuma ocorrência anterior registrada para este apartamento nesta sessão."
 
     records = load_session()
-    
+
     # Handle case where records is None or not a list
     if not records or not isinstance(records, list):
         return "Nenhuma ocorrência anterior registrada para este apartamento nesta sessão."
-    
+
     matches = [
         r for r in records
         if r.get("apartment", "").strip().lower() == apartment.strip().lower()

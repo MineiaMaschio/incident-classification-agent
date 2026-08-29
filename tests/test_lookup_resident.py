@@ -29,7 +29,7 @@ class TestLookupResident:
             mock_instance = MagicMock()
             mock_client.return_value.__enter__.return_value = mock_instance
             mock_instance.get.side_effect = httpx.ConnectTimeout("Connection timeout")
-            
+
             result = lookup_resident.invoke({"apartment": "101", "building": "A"})
 
         assert result["found"] is False
@@ -42,7 +42,7 @@ class TestLookupResident:
             mock_instance = MagicMock()
             mock_client.return_value.__enter__.return_value = mock_instance
             mock_instance.get.side_effect = httpx.ReadTimeout("Read timeout")
-            
+
             result = lookup_resident.invoke({"apartment": "101", "building": "A"})
 
         assert result["found"] is False
@@ -55,7 +55,7 @@ class TestLookupResident:
             mock_instance = MagicMock()
             mock_client.return_value.__enter__.return_value = mock_instance
             mock_instance.get.side_effect = httpx.NetworkError("Network error")
-            
+
             result = lookup_resident.invoke({"apartment": "101", "building": "A"})
 
         assert result["found"] is False
@@ -78,7 +78,7 @@ class TestLookupResident:
             mock_instance = MagicMock()
             mock_client.return_value.__enter__.return_value = mock_instance
             mock_instance.get.side_effect = http_error
-            
+
             result = lookup_resident.invoke({"apartment": "101", "building": "A"})
 
         assert result["found"] is False
@@ -113,7 +113,7 @@ class TestLookupResident:
             mock_instance = MagicMock()
             mock_client.return_value.__enter__.return_value = mock_instance
             mock_instance.get.side_effect = httpx.ConnectError("Connection refused")
-            
+
             result = lookup_resident.invoke({"apartment": "101", "building": "A"})
 
         assert result["found"] is False
@@ -130,7 +130,7 @@ class TestLookupResidentContract:
             mock_instance = MagicMock()
             mock_client.return_value.__enter__.return_value = mock_instance
             mock_instance.get.side_effect = Exception("Error")
-            
+
             result = lookup_resident.invoke({"apartment": "101", "building": "A"})
 
         assert isinstance(result, dict)
@@ -157,7 +157,7 @@ class TestLookupResidentContract:
                 mock_instance = MagicMock()
                 mock_client.return_value.__enter__.return_value = mock_instance
                 mock_instance.get.side_effect = error
-                
+
                 # Não deve lançar exceção
                 result = lookup_resident.invoke({"apartment": "101", "building": "A"})
 
