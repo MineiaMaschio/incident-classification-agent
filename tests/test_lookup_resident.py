@@ -24,9 +24,12 @@ class TestLookupResident:
     def test_lookup_resident_timeout_connection_error(self):
         """❌ Timeout de conexão (httpx.ConnectTimeout) — retorna erro."""
         with patch(
-            "incident_classification_agent.tools.lookup_resident.httpx.post",
-            side_effect=httpx.ConnectTimeout("Connection timeout"),
-        ):
+            "incident_classification_agent.tools.lookup_resident.httpx.Client",
+        ) as mock_client:
+            mock_instance = MagicMock()
+            mock_client.return_value.__enter__.return_value = mock_instance
+            mock_instance.get.side_effect = httpx.ConnectTimeout("Connection timeout")
+
             result = lookup_resident.invoke({"apartment": "101", "building": "A"})
 
         assert result["found"] is False
@@ -34,9 +37,12 @@ class TestLookupResident:
     def test_lookup_resident_timeout_read_error(self):
         """❌ Timeout de leitura (httpx.ReadTimeout) — retorna erro."""
         with patch(
-            "incident_classification_agent.tools.lookup_resident.httpx.post",
-            side_effect=httpx.ReadTimeout("Read timeout"),
-        ):
+            "incident_classification_agent.tools.lookup_resident.httpx.Client",
+        ) as mock_client:
+            mock_instance = MagicMock()
+            mock_client.return_value.__enter__.return_value = mock_instance
+            mock_instance.get.side_effect = httpx.ReadTimeout("Read timeout")
+
             result = lookup_resident.invoke({"apartment": "101", "building": "A"})
 
         assert result["found"] is False
@@ -44,9 +50,12 @@ class TestLookupResident:
     def test_lookup_resident_network_error_generic(self):
         """❌ Erro genérico de rede — retorna erro."""
         with patch(
-            "incident_classification_agent.tools.lookup_resident.httpx.post",
-            side_effect=httpx.NetworkError("Network error"),
-        ):
+            "incident_classification_agent.tools.lookup_resident.httpx.Client",
+        ) as mock_client:
+            mock_instance = MagicMock()
+            mock_client.return_value.__enter__.return_value = mock_instance
+            mock_instance.get.side_effect = httpx.NetworkError("Network error")
+
             result = lookup_resident.invoke({"apartment": "101", "building": "A"})
 
         assert result["found"] is False
@@ -64,9 +73,12 @@ class TestLookupResident:
         )
 
         with patch(
-            "incident_classification_agent.tools.lookup_resident.httpx.post",
-            side_effect=http_error,
-        ):
+            "incident_classification_agent.tools.lookup_resident.httpx.Client",
+        ) as mock_client:
+            mock_instance = MagicMock()
+            mock_client.return_value.__enter__.return_value = mock_instance
+            mock_instance.get.side_effect = http_error
+
             result = lookup_resident.invoke({"apartment": "101", "building": "A"})
 
         assert result["found"] is False
@@ -96,9 +108,12 @@ class TestLookupResident:
     def test_lookup_resident_connect_error_fallback(self):
         """❌ ConnectError é tratado com fallback."""
         with patch(
-            "incident_classification_agent.tools.lookup_resident.httpx.post",
-            side_effect=httpx.ConnectError("Connection refused"),
-        ):
+            "incident_classification_agent.tools.lookup_resident.httpx.Client",
+        ) as mock_client:
+            mock_instance = MagicMock()
+            mock_client.return_value.__enter__.return_value = mock_instance
+            mock_instance.get.side_effect = httpx.ConnectError("Connection refused")
+
             result = lookup_resident.invoke({"apartment": "101", "building": "A"})
 
         assert result["found"] is False
@@ -110,9 +125,12 @@ class TestLookupResidentContract:
     def test_lookup_resident_always_returns_found_field(self):
         """✅ lookup_resident sempre retorna dict com 'found' field."""
         with patch(
-            "incident_classification_agent.tools.lookup_resident.httpx.post",
-            side_effect=Exception("Error"),
-        ):
+            "incident_classification_agent.tools.lookup_resident.httpx.Client",
+        ) as mock_client:
+            mock_instance = MagicMock()
+            mock_client.return_value.__enter__.return_value = mock_instance
+            mock_instance.get.side_effect = Exception("Error")
+
             result = lookup_resident.invoke({"apartment": "101", "building": "A"})
 
         assert isinstance(result, dict)
@@ -134,9 +152,12 @@ class TestLookupResidentContract:
 
         for error in errors:
             with patch(
-                "incident_classification_agent.tools.lookup_resident.httpx.post",
-                side_effect=error,
-            ):
+                "incident_classification_agent.tools.lookup_resident.httpx.Client",
+            ) as mock_client:
+                mock_instance = MagicMock()
+                mock_client.return_value.__enter__.return_value = mock_instance
+                mock_instance.get.side_effect = error
+
                 # Não deve lançar exceção
                 result = lookup_resident.invoke({"apartment": "101", "building": "A"})
 
