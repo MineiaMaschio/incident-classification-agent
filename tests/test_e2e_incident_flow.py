@@ -93,6 +93,9 @@ class TestE2EIncidentFlow:
         ), patch(
             "incident_classification_agent.nodes.save_occurrence.Path.write_text",
             side_effect=mock_save_file,
+        ), patch(
+            "incident_classification_agent.nodes.prepare_context.load_session",
+            return_value=[],
         ):
             # Constrói e executa o grafo
             graph = build_graph()
@@ -285,6 +288,9 @@ class TestE2EIncidentFlow:
         ), patch(
             "incident_classification_agent.nodes.validate_input._detect_multiple_incidents",
             return_value=False,
+        ), patch(
+            "incident_classification_agent.nodes.prepare_context.load_session",
+            return_value=[],
         ):
             graph = build_graph()
             result = graph.invoke(input_state, {"configurable": {"thread_id": "test-005"}})
@@ -340,6 +346,9 @@ class TestE2EIncidentFlow:
         ), patch(
             "incident_classification_agent.nodes.validate_input._detect_multiple_incidents",
             return_value=False,
+        ), patch(
+            "incident_classification_agent.nodes.prepare_context.load_session",
+            return_value=[],
         ):
             graph = build_graph()
             result = graph.invoke(input_state, {"configurable": {"thread_id": "test-006"}})
@@ -401,6 +410,9 @@ class TestE2EIncidentFlow:
         ), patch(
             "incident_classification_agent.nodes.validate_input._detect_multiple_incidents",
             return_value=False,
+        ), patch(
+            "incident_classification_agent.nodes.prepare_context.load_session",
+            return_value=[],
         ):
             graph = build_graph()
             result = graph.invoke(input_state, {"configurable": {"thread_id": "test-007"}})
