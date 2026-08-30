@@ -1,0 +1,74 @@
+{
+  "name": "Incident Classification Webhook - HIGH Severity Alert",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "incidents",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "webhook-trigger-node",
+      "name": "Webhook",
+      "description": "Receives HIGH severity incident notifications from incident-classification-agent"
+    },
+    {
+      "parameters": {
+        "fromEmail": "{{ env.MAIL_FROM }}",
+        "toEmail": "{{ env.MAIL_TO }}",
+        "subject": "🚨 ALERTA - Ocorrência de alta severidade",
+        "html": "<h2>🚨 ALERTA DE OCORRÊNCIA</h2>\n\n<p>Uma ocorrência de alta severidade foi identificada.</p>\n\n<hr>\n\n<p>\n<strong>Severidade:</strong> {{$json.body.severity}}<br>\n<strong>Categoria:</strong> {{$json.body.category}}<br>\n<strong>Apartamento:</strong> {{$json.body.apartment}}<br>\n<strong>Bloco:</strong> {{$json.body.building}}<br>\n<strong>Relatado por:</strong> {{$json.body.reported_by}}<br>\n<strong>Data do relato:</strong> {{$json.body.reported_at}}\n</p>\n\n<hr>\n\n<h3>Resumo</h3>\n<p>{{$json.body.summary}}</p>\n\n<h3>Descrição</h3>\n<p>{{$json.body.user_input}}</p>\n\n<h3>Pessoas envolvidas</h3>\n<p>{{$json.body.involved_people.join(', ')}}</p>\n\n<hr>\n\n<p>\n<strong>ID da ocorrência:</strong> {{$json.body.occurrence_id}}<br>\n<strong>Escalonado em:</strong> {{$json.body.escalated_at}}\n</p>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        224,
+        0
+      ],
+      "id": "send-email-node",
+      "name": "Send an Email",
+      "description": "Sends email notification with incident details",
+      "credentials": {
+        "smtp": {
+          "name": "SMTP account - Configure with your email provider"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Send an Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "description": "Workflow for receiving HIGH severity incident notifications and sending email alerts"
+  },
+  "nodeGroups": [],
+  "tags": [
+    "incident-classification",
+    "webhook",
+    "email-notification",
+    "security"
+  ]
+}
