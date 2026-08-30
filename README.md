@@ -1101,22 +1101,9 @@ O schema `IncidentInput` valida e normaliza os dados antes de iniciar o grafo, r
 
 ## 🎬 Vídeo de Demonstração
 
-Uma demonstração completa do projeto será gravada em Card 11. O vídeo cobrirá:
+Uma demonstração completa do projeto será gravada em Card 11.
 
-**Duração esperada:** 8–10 minutos
-
-**Conteúdo previsto:**
-- 0:00–1:00 — Problema, objetivo e classificação da solução
-- 1:00–2:00 — Arquitetura LangGraph e integrações
-- 2:00–4:00 — Dois cenários de uso (fluxo principal + rejeição)
-- 4:00–5:00 — Segurança e detecção de prompt injection
-- 5:00–6:00 — QA e testes com apoio de IA (79 testes)
-- 6:00–8:00 — Pipeline CI, observabilidade, anomalias e risco
-- 8:00–9:00 — Automação low-code com n8n
-- 9:00–10:00 — Limitações e melhorias futuras
-
-**Status:** Será preenchido após gravação em Card 11  
-**Plataforma:** YouTube (como não listado)
+**Plataforma:** YouTube: https://youtu.be/kGs_DetlXzU
 
 ---
 
